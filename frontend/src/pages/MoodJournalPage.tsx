@@ -1,29 +1,42 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MoodEntryForm from '../components/MoodJournal/MoodEntryForm';
 import MoodHistoryList from '../components/MoodJournal/MoodHistoryList';
 import MoodTrendChart from '../components/Visualization/MoodTrendChart';
 import AIChatInterface from '../components/Chat/AIChatInterface';
 import CrisisAlert from '../components/Chat/CrisisAlert';
 import { moodService } from '../services/moodService';
+import { suggestionsService, SuggestionCard, SuggestionsResponse } from '../services/suggestionsService';
 import { MoodEntry, MoodTrendData } from '../types/mood.types';
 
 const MoodJournalPage: React.FC = () => {
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [trendData, setTrendData] = useState<MoodTrendData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState<MoodEntry | null>(null);
-  const [activeTab, setActiveTab] = useState<'chat' | 'journal' | 'trends'>('chat'); // 改为默认chat
-  const [timeRange, setTimeRange] = useState<'week' | 'month'>('week');
+  const [activeTab, setActiveTab] = useState<'chat' | 'journal' | 'trends' | 'suggestions'>('chat');
+  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'custom'>('week');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
   const [notification, setNotification] = useState<string | null>(null);
-  const [showCrisisAlert, setShowCrisisAlert] = useState(false); // 新增
+  const [showCrisisAlert, setShowCrisisAlert] = useState(false);
+
+  // Suggestions state
+  const [suggestions, setSuggestions] = useState<SuggestionCard[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
+  const [suggestionsTimeRange, setSuggestionsTimeRange] = useState<'today' | 'week' | 'month' | 'custom'>('week');
+  const [suggestionsStartDate, setSuggestionsStartDate] = useState<string>('');
+  const [suggestionsEndDate, setSuggestionsEndDate] = useState<string>('');
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [entriesData, trendsData] = await Promise.all([
         moodService.getEntries(),
-        moodService.getTrendData(timeRange)
+        moodService.getTrendData(timeRange, customStartDate, customEndDate)
       ]);
       setEntries(entriesData);
       setTrendData(trendsData);
@@ -33,7 +46,7 @@ const MoodJournalPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [timeRange]);
+  }, [timeRange, customStartDate, customEndDate]);
 
   useEffect(() => {
     loadData();
@@ -68,25 +81,92 @@ const MoodJournalPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this entry?')) {
-      try {
-        await moodService.deleteEntry(id);
-        showNotification('Entry deleted.');
-        await loadData();
-      } catch (error) {
-        setNotification('Error: Could not delete the entry.');
-      }
+    // Confirmation is already handled in MoodHistoryList component
+    try {
+      await moodService.deleteEntry(id);
+      showNotification('Entry deleted.');
+      await loadData();
+    } catch (error) {
+      setNotification('Error: Could not delete the entry.');
     }
   };
 
-  const handleTimeRangeChange = (range: 'week' | 'month') => {
+  const handleTimeRangeChange = (
+    range: 'today' | 'week' | 'month' | 'custom',
+    startDate?: string,
+    endDate?: string
+  ) => {
     setTimeRange(range);
+    if (range === 'custom' && startDate && endDate) {
+      setCustomStartDate(startDate);
+      setCustomEndDate(endDate);
+    }
   };
 
-  // 新增：处理危机检测
   const handleCrisisDetected = () => {
     setShowCrisisAlert(true);
   };
+
+  const loadSuggestions = async () => {
+    setSuggestionsLoading(true);
+    try {
+      const response = await suggestionsService.getSuggestions(
+        suggestionsTimeRange,
+        suggestionsStartDate,
+        suggestionsEndDate
+      );
+      setSuggestions(response.suggestions);
+    } catch (err) {
+      console.error('Failed to load suggestions:', err);
+      showNotification('Failed to load suggestions');
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  };
+
+  const handleGenerateAI = async () => {
+    setGeneratingAI(true);
+    try {
+      const response = await suggestionsService.generateAISuggestions(
+        suggestionsTimeRange,
+        suggestionsStartDate,
+        suggestionsEndDate
+      );
+      setSuggestions(response.suggestions);
+      showNotification('AI suggestions generated!');
+    } catch (err) {
+      console.error('Failed to generate AI suggestions:', err);
+      showNotification('Failed to generate AI suggestions');
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
+
+  const handleCompleteSuggestion = async (suggestionId: string) => {
+    try {
+      await suggestionsService.completeSuggestion(suggestionId);
+      showNotification('Suggestion completed!');
+      await loadSuggestions();
+    } catch (err) {
+      console.error('Failed to complete suggestion:', err);
+    }
+  };
+
+  const handleSkipSuggestion = async (suggestionId: string) => {
+    try {
+      await suggestionsService.skipSuggestion(suggestionId);
+      setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+    } catch (err) {
+      console.error('Failed to skip suggestion:', err);
+    }
+  };
+
+  // Load suggestions when switching to suggestions tab or time range changes
+  useEffect(() => {
+    if (activeTab === 'suggestions') {
+      loadSuggestions();
+    }
+  }, [activeTab, suggestionsTimeRange, suggestionsStartDate, suggestionsEndDate]);
 
   const pageStyle: React.CSSProperties = { background: '#f4f7f6', minHeight: '100vh', padding: '20px' };
   const headerStyle: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto 20px' };
@@ -121,32 +201,41 @@ const MoodJournalPage: React.FC = () => {
     <div style={pageStyle}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <header style={headerStyle}>
-        <h1 style={h1Style}>🧠 Mental Health Companion</h1>
-        {activeTab === 'journal' && (
-          <button style={addEntryBtnStyle} onClick={() => { setShowForm(true); setEditingEntry(null); }}>
-            + Add New Entry
+        <h1 style={h1Style}>Mental Health Companion</h1>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {activeTab === 'journal' && (
+            <button style={addEntryBtnStyle} onClick={() => { setShowForm(true); setEditingEntry(null); }}>
+              + Add New Entry
+            </button>
+          )}
+          <button
+            style={{ ...addEntryBtnStyle, background: '#8b5cf6' }}
+            onClick={() => navigate('/profile')}
+          >
+            Profile
           </button>
-        )}
+        </div>
       </header>
 
       {notification && <div style={notificationStyle}>{notification}</div>}
 
-      {/* Tab Navigation - 添加AI Chat标签 */}
+      {/* Tab Navigation */}
       <div style={tabNavigationStyle}>
         <button style={tabBtnStyle(activeTab === 'chat')} onClick={() => setActiveTab('chat')}>
-          💬 AI Chat
+          AI Chat
         </button>
         <button style={tabBtnStyle(activeTab === 'journal')} onClick={() => setActiveTab('journal')}>
-          📝 Journal
+          Journal
         </button>
         <button style={tabBtnStyle(activeTab === 'trends')} onClick={() => setActiveTab('trends')}>
-          📊 Trends
+          Trends
+        </button>
+        <button style={tabBtnStyle(activeTab === 'suggestions')} onClick={() => setActiveTab('suggestions')}>
+          Suggestions
         </button>
       </div>
 
-      {/* Main Content */}
       <main style={pageContentStyle}>
-        {/* AI Chat Tab - 新增 */}
         {activeTab === 'chat' && (
           <AIChatInterface onCrisisDetected={handleCrisisDetected} />
         )}
@@ -168,7 +257,248 @@ const MoodJournalPage: React.FC = () => {
 
         {/* Trends Tab */}
         {activeTab === 'trends' && (
-          <MoodTrendChart data={trendData} onTimeRangeChange={handleTimeRangeChange} timeRange={timeRange} />
+          <MoodTrendChart
+            data={trendData}
+            onTimeRangeChange={handleTimeRangeChange}
+            timeRange={timeRange}
+            customStartDate={customStartDate}
+            customEndDate={customEndDate}
+          />
+        )}
+
+        {/* Suggestions Tab */}
+        {activeTab === 'suggestions' && (
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            {suggestionsLoading ? (
+              <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <div style={{
+                  width: '50px',
+                  height: '50px',
+                  border: '4px solid #e5e7eb',
+                  borderTopColor: '#3b82f6',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 20px'
+                }}></div>
+                <p>Loading suggestions...</p>
+              </div>
+            ) : (
+              <>
+                {/* Time Range Selector */}
+                <div style={{
+                  background: 'white',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  marginBottom: '24px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '14px', fontWeight: '600', color: '#1f2937', marginBottom: '8px', display: 'block' }}>
+                      Analysis Time Range
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {(['today', 'week', 'month', 'custom'] as const).map((range) => (
+                        <button
+                          key={range}
+                          onClick={() => setSuggestionsTimeRange(range)}
+                          style={{
+                            padding: '8px 16px',
+                            border: suggestionsTimeRange === range ? '2px solid #3b82f6' : '1px solid #d1d5db',
+                            background: suggestionsTimeRange === range ? '#3b82f6' : 'white',
+                            color: suggestionsTimeRange === range ? 'white' : '#1f2937',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {range === 'today' ? 'Today' : range === 'week' ? 'Past 2 Weeks' : range === 'month' ? 'Past Month' : 'Custom Range'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {suggestionsTimeRange === 'custom' && (
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div>
+                        <label style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px', display: 'block' }}>Start Date</label>
+                        <input
+                          type="date"
+                          value={suggestionsStartDate}
+                          onChange={(e) => setSuggestionsStartDate(e.target.value)}
+                          style={{
+                            padding: '8px 12px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px', display: 'block' }}>End Date</label>
+                        <input
+                          type="date"
+                          value={suggestionsEndDate}
+                          onChange={(e) => setSuggestionsEndDate(e.target.value)}
+                          style={{
+                            padding: '8px 12px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginBottom: '24px', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={handleGenerateAI}
+                    disabled={generatingAI}
+                    style={{
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
+                      color: 'white',
+                      padding: '12px 24px',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: generatingAI ? 'not-allowed' : 'pointer',
+                      opacity: generatingAI ? 0.7 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {generatingAI ? '⏳ Generating...' : '✨ Generate with AI'}
+                  </button>
+                  <button
+                    onClick={loadSuggestions}
+                    style={{
+                      background: '#3b82f6',
+                      color: 'white',
+                      padding: '12px 24px',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    🔄 Refresh
+                  </button>
+                </div>
+
+                {suggestions.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: '12px' }}>
+                    <h3 style={{ color: '#1f2937', marginBottom: '12px' }}>No Suggestions Yet</h3>
+                    <p style={{ color: '#6b7280' }}>Click "Generate with AI" or "Refresh" to get personalized suggestions!</p>
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gap: '20px'
+                  }}>
+                    {suggestions.map((suggestion) => (
+                      <div
+                        key={suggestion.id}
+                        style={{
+                          background: 'white',
+                          borderRadius: '12px',
+                          padding: '20px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          borderLeft: `4px solid #3b82f6`,
+                          transition: 'transform 0.2s',
+                        }}
+                      >
+                        <div style={{ marginBottom: '12px' }}>
+                          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937', margin: '0 0 8px 0' }}>
+                            {suggestion.title}
+                          </h3>
+                          <span style={{
+                            background: '#3b82f6',
+                            color: 'white',
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>
+                            {suggestion.category}
+                          </span>
+                        </div>
+
+                        <p style={{ color: '#4b5563', fontSize: '14px', lineHeight: '1.6', marginBottom: '16px' }}>
+                          {suggestion.description}
+                        </p>
+
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          paddingTop: '12px',
+                          borderTop: '1px solid #e5e7eb',
+                          marginBottom: '12px'
+                        }}>
+                          <span style={{ color: '#6b7280', fontSize: '14px' }}>
+                            ⏱️ {suggestion.duration_minutes} min
+                          </span>
+                          {suggestion.user_type_specific && (
+                            <span style={{
+                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                              color: 'white',
+                              padding: '4px 10px',
+                              borderRadius: '10px',
+                              fontSize: '11px',
+                              fontWeight: '600'
+                            }}>
+                              Personalized
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => handleCompleteSuggestion(suggestion.id)}
+                            style={{
+                              flex: 1,
+                              background: '#10b981',
+                              color: 'white',
+                              padding: '10px',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✓ Complete
+                          </button>
+                          <button
+                            onClick={() => handleSkipSuggestion(suggestion.id)}
+                            style={{
+                              flex: 1,
+                              background: '#f3f4f6',
+                              color: '#6b7280',
+                              padding: '10px',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Skip
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         )}
       </main>
 
@@ -178,7 +508,7 @@ const MoodJournalPage: React.FC = () => {
           <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
             <div style={modalHeaderStyle}>
               <h2>{editingEntry ? 'Edit Mood Entry' : 'How are you feeling?'}</h2>
-              <button style={closeBtnStyle} onClick={() => setShowForm(false)}>✕</button>
+              <button style={closeBtnStyle} onClick={() => setShowForm(false)}>X</button>
             </div>
             <MoodEntryForm
               onSubmit={handleSubmit}
@@ -189,7 +519,6 @@ const MoodJournalPage: React.FC = () => {
         </div>
       )}
 
-      {/* Crisis Alert Modal - 新增 */}
       <CrisisAlert
         isOpen={showCrisisAlert}
         onClose={() => setShowCrisisAlert(false)}

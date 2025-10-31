@@ -3,7 +3,6 @@ import {
   ComposedChart,
   Line,
   Area,
-  Brush,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -15,8 +14,10 @@ import { MoodTrendData, getMoodColor } from '../../types/mood.types';
 
 interface MoodTrendChartProps {
   data: MoodTrendData[];
-  onTimeRangeChange: (range: 'week' | 'month') => void;
-  timeRange: 'week' | 'month';
+  onTimeRangeChange: (range: 'today' | 'week' | 'month' | 'custom', startDate?: string, endDate?: string) => void;
+  timeRange: 'today' | 'week' | 'month' | 'custom';
+  customStartDate?: string;
+  customEndDate?: string;
 }
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -54,11 +55,16 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-const MoodTrendChart: React.FC<MoodTrendChartProps> = ({ 
+const MoodTrendChart: React.FC<MoodTrendChartProps> = ({
   data,
   onTimeRangeChange,
-  timeRange
+  timeRange,
+  customStartDate,
+  customEndDate
 }) => {
+  const [showCustomDatePicker, setShowCustomDatePicker] = React.useState(false);
+  const [tempStartDate, setTempStartDate] = React.useState(customStartDate || '');
+  const [tempEndDate, setTempEndDate] = React.useState(customEndDate || '');
 
   const getAverageMood = (): number => {
     if (data.length === 0) return 0;
@@ -67,7 +73,13 @@ const MoodTrendChart: React.FC<MoodTrendChartProps> = ({
     return count > 0 ? sum / count : 0;
   };
 
+  const getTotalEntries = (): number => {
+    // Sum up all entry counts from the data
+    return data.reduce((acc, d) => acc + (d.entryCount || 0), 0);
+  };
+
   const avgMood = getAverageMood();
+  const totalEntries = getTotalEntries();
 
   const chartStyle: React.CSSProperties = {
     background: 'white',
@@ -166,6 +178,89 @@ const MoodTrendChart: React.FC<MoodTrendChartProps> = ({
     margin: 0,
   };
 
+  const modalOverlayStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  };
+
+  const modalContentStyle: React.CSSProperties = {
+    background: 'white',
+    borderRadius: '12px',
+    padding: '24px',
+    maxWidth: '400px',
+    width: '90%',
+  };
+
+  const modalHeaderStyle: React.CSSProperties = {
+    fontSize: '18px',
+    fontWeight: 600,
+    marginBottom: '16px',
+    color: '#1f2937',
+  };
+
+  const dateInputGroupStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginBottom: '20px',
+  };
+
+  const dateInputLabelStyle: React.CSSProperties = {
+    fontSize: '14px',
+    fontWeight: 500,
+    color: '#4b5563',
+    marginBottom: '4px',
+  };
+
+  const dateInputStyle: React.CSSProperties = {
+    padding: '8px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+  };
+
+  const modalButtonGroupStyle: React.CSSProperties = {
+    display: 'flex',
+    gap: '8px',
+    justifyContent: 'flex-end',
+  };
+
+  const cancelBtnStyle: React.CSSProperties = {
+    padding: '8px 16px',
+    border: '1px solid #d1d5db',
+    background: 'white',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 500,
+  };
+
+  const applyBtnStyle: React.CSSProperties = {
+    padding: '8px 16px',
+    border: 'none',
+    background: '#3b82f6',
+    color: 'white',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 500,
+  };
+
+  const handleApplyCustomRange = () => {
+    if (tempStartDate && tempEndDate) {
+      onTimeRangeChange('custom', tempStartDate, tempEndDate);
+      setShowCustomDatePicker(false);
+    }
+  };
+
   return (
     <div style={chartStyle}>
       <div style={headerStyle}>
@@ -174,6 +269,12 @@ const MoodTrendChart: React.FC<MoodTrendChartProps> = ({
           <p style={subtitleStyle}>Your mood patterns over the selected period</p>
         </div>
         <div style={timeRangeSelectorStyle}>
+          <button
+            style={rangeBtnStyle(timeRange === 'today')}
+            onClick={() => onTimeRangeChange('today')}
+          >
+            Today
+          </button>
           <button
             style={rangeBtnStyle(timeRange === 'week')}
             onClick={() => onTimeRangeChange('week')}
@@ -186,6 +287,12 @@ const MoodTrendChart: React.FC<MoodTrendChartProps> = ({
           >
             Last 30 Days
           </button>
+          <button
+            style={rangeBtnStyle(timeRange === 'custom')}
+            onClick={() => setShowCustomDatePicker(true)}
+          >
+            Custom
+          </button>
         </div>
       </div>
 
@@ -196,13 +303,13 @@ const MoodTrendChart: React.FC<MoodTrendChartProps> = ({
         </div>
         <div style={statItemStyle}>
           <span style={statLabelStyle}>Total Entries</span>
-          <span style={statValueStyle}>{data.filter(d => d.moodScore > 0).length}</span>
+          <span style={statValueStyle}>{totalEntries}</span>
         </div>
       </div>
 
       {data.length === 0 ? (
         <div style={emptyChartStyle}>
-          <p style={emptyChartPStyle}>📊</p>
+          <p style={emptyChartPStyle}>CHART</p>
           <h3 style={h2Style}>No data to display</h3>
           <p style={emptySubtitleStyle}>Log your mood to see your trends.</p>
         </div>
@@ -246,17 +353,52 @@ const MoodTrendChart: React.FC<MoodTrendChartProps> = ({
                 activeDot={{ r: 6, stroke: 'white', strokeWidth: 2 }}
                 name="Mood Score"
               />
-              {data.length > 7 && (
-                <Brush 
-                  dataKey="date" 
-                  height={30} 
-                  stroke="#3b82f6"
-                  fill="#f1f5f9"
-                  y={360}
-                />
-              )}
             </ComposedChart>
           </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Custom Date Range Modal */}
+      {showCustomDatePicker && (
+        <div style={modalOverlayStyle} onClick={() => setShowCustomDatePicker(false)}>
+          <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
+            <h3 style={modalHeaderStyle}>Select Custom Date Range</h3>
+            <div style={dateInputGroupStyle}>
+              <div>
+                <label style={dateInputLabelStyle}>Start Date</label>
+                <input
+                  type="date"
+                  style={dateInputStyle}
+                  value={tempStartDate}
+                  onChange={(e) => setTempStartDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div>
+                <label style={dateInputLabelStyle}>End Date</label>
+                <input
+                  type="date"
+                  style={dateInputStyle}
+                  value={tempEndDate}
+                  onChange={(e) => setTempEndDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  min={tempStartDate}
+                />
+              </div>
+            </div>
+            <div style={modalButtonGroupStyle}>
+              <button style={cancelBtnStyle} onClick={() => setShowCustomDatePicker(false)}>
+                Cancel
+              </button>
+              <button
+                style={applyBtnStyle}
+                onClick={handleApplyCustomRange}
+                disabled={!tempStartDate || !tempEndDate}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

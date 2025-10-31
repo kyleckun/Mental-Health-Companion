@@ -1,8 +1,10 @@
 // src/services/moodService.ts
 import { MoodEntry, MoodTrendData } from '../types/mood.types';
+import { authService } from './authService';
 
 // Configuration
-const API_BASE_URL = 'http://localhost:3001/api';
+// Use empty string to make requests relative to current origin (Vite proxy handles it)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const MOCK_DATA_KEY = 'mood_entries';
 
 // --- LocalStorage Manager ---
@@ -83,10 +85,17 @@ if (!moodStorage.get()) {
 
 // --- Mood Service ---
 class MoodService {
-  private useMockData: boolean = true;
+  private useMockData: boolean = false;
 
-  private getAuthToken(): string {
-    return localStorage.getItem('auth_token') || '';
+  /**
+   * Get authentication headers with JWT token
+   */
+  private getAuthHeaders(): HeadersInit {
+    const token = authService.getToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    };
   }
 
   async createEntry(data: Omit<MoodEntry, 'id' | 'userId' | 'timestamp'>): Promise<MoodEntry> {
@@ -101,12 +110,19 @@ class MoodService {
       moodStorage.set([...entries, newEntry]);
       return newEntry;
     }
-    
-    const response = await fetch(`${API_BASE_URL}/mood-entries`, {
+
+    const response = await fetch(`${API_BASE_URL}/api/mood-entries`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.getAuthToken()}` },
+      headers: this.getAuthHeaders(),
       body: JSON.stringify(data)
     });
+
+    if (response.status === 401) {
+      authService.logout();
+      window.location.href = '/login';
+      throw new Error('Unauthorized - Please login again');
+    }
+
     if (!response.ok) throw new Error('Failed to create mood entry');
     return response.json();
   }
@@ -118,9 +134,22 @@ class MoodService {
       return limit ? sorted.slice(0, limit) : sorted;
     }
 
-    const url = new URL(`${API_BASE_URL}/mood-entries`);
-    if (limit) url.searchParams.set('limit', limit.toString());
-    const response = await fetch(url.toString(), { headers: { 'Authorization': `Bearer ${this.getAuthToken()}` } });
+    // Build URL with query params
+    let url = `${API_BASE_URL}/api/mood-entries`;
+    if (limit) {
+      url += `?limit=${limit}`;
+    }
+
+    const response = await fetch(url, {
+      headers: this.getAuthHeaders()
+    });
+
+    if (response.status === 401) {
+      authService.logout();
+      window.location.href = '/login';
+      throw new Error('Unauthorized - Please login again');
+    }
+
     if (!response.ok) throw new Error('Failed to fetch mood entries');
     const data = await response.json();
     return data.map((entry: any) => ({ ...entry, timestamp: new Date(entry.timestamp) }));
@@ -131,18 +160,25 @@ class MoodService {
       const entries = moodStorage.get() || [];
       const index = entries.findIndex(e => e.id === id);
       if (index === -1) throw new Error('Entry not found');
-      
+
       const updatedEntry = { ...entries[index], ...data };
       entries[index] = updatedEntry;
       moodStorage.set(entries);
       return updatedEntry;
     }
 
-    const response = await fetch(`${API_BASE_URL}/mood-entries/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/mood-entries/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.getAuthToken()}` },
+      headers: this.getAuthHeaders(),
       body: JSON.stringify(data)
     });
+
+    if (response.status === 401) {
+      authService.logout();
+      window.location.href = '/login';
+      throw new Error('Unauthorized - Please login again');
+    }
+
     if (!response.ok) throw new Error('Failed to update mood entry');
     return response.json();
   }
@@ -154,40 +190,78 @@ class MoodService {
       return;
     }
 
-    const response = await fetch(`${API_BASE_URL}/mood-entries/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/mood-entries/${id}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${this.getAuthToken()}` }
+      headers: this.getAuthHeaders()
     });
+
+    if (response.status === 401) {
+      authService.logout();
+      window.location.href = '/login';
+      throw new Error('Unauthorized - Please login again');
+    }
+
     if (!response.ok) throw new Error('Failed to delete mood entry');
   }
 
-  async getTrendData(range: 'week' | 'month' = 'week'): Promise<MoodTrendData[]> {
-    const entries = await this.getEntries();
-    const days = range === 'week' ? 7 : 30;
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days + 1);
-    startDate.setHours(0, 0, 0, 0);
+  async getTrendData(
+    range: 'today' | 'week' | 'month' | 'custom' = 'week',
+    startDate?: string,
+    endDate?: string
+  ): Promise<MoodTrendData[]> {
+    if (this.useMockData) {
+      // Mock mode: Calculate trends from local storage
+      const entries = moodStorage.get() || [];
+      const days = range === 'week' ? 7 : 30;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days + 1);
+      startDate.setHours(0, 0, 0, 0);
 
-    const filteredEntries = entries.filter(entry => entry.timestamp >= startDate);
+      const filteredEntries = entries.filter(entry => entry.timestamp >= startDate);
 
-    const groupedByDate: { [key: string]: number[] } = {};
-    for (let i = 0; i < days; i++) {
-      const date = new Date(startDate);
-      date.setDate(date.getDate() + i);
-      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
-      groupedByDate[dateKey] = [];
+      const groupedByDate: { [key: string]: number[] } = {};
+      for (let i = 0; i < days; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        groupedByDate[dateKey] = [];
+      }
+
+      filteredEntries.forEach(entry => {
+        const dateKey = entry.timestamp.toISOString().split('T')[0]; // YYYY-MM-DD
+        if (groupedByDate[dateKey]) {
+          groupedByDate[dateKey].push(entry.moodScore);
+        }
+      });
+
+      return Object.entries(groupedByDate).map(([date, scores]) => ({
+        date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        moodScore: scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : 0
+      }));
     }
 
-    filteredEntries.forEach(entry => {
-      const dateKey = entry.timestamp.toISOString().split('T')[0]; // YYYY-MM-DD
-      if (groupedByDate[dateKey]) {
-        groupedByDate[dateKey].push(entry.moodScore);
-      }
-    });
+    // Production mode: Call backend API
+    let url = `${API_BASE_URL}/api/mood-entries/trend?range=${range}`;
+    if (range === 'custom' && startDate && endDate) {
+      url += `&start_date_param=${startDate}&end_date_param=${endDate}`;
+    }
 
-    return Object.entries(groupedByDate).map(([date, scores]) => ({
-      date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      moodScore: scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : 0
+    const response = await fetch(url, { headers: this.getAuthHeaders() });
+
+    if (response.status === 401) {
+      authService.logout();
+      window.location.href = '/login';
+      throw new Error('Unauthorized - Please login again');
+    }
+
+    if (!response.ok) throw new Error('Failed to fetch trend data');
+
+    // Convert snake_case to camelCase
+    const data = await response.json();
+    return data.map((item: any) => ({
+      date: item.date,
+      moodScore: item.mood_score,
+      entryCount: item.entry_count || 0
     }));
   }
 

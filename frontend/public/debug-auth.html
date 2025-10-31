@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>认证状态诊断工具</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .storage-item {
+            background: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            word-break: break-all;
+        }
+
+        .storage-key {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .storage-value {
+            color: #2d3748;
+            margin-top: 8px;
+            padding-left: 20px;
+        }
+
+        .empty {
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            margin: 8px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button-danger {
+            background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
+        }
+
+        .button-success {
+            background: linear-gradient(135deg, #68d391 0%, #38a169 100%);
+        }
+
+        .actions {
+            text-align: center;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+        }
+
+        .status {
+            padding: 16px;
+            margin: 15px 0;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .status-authenticated {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 2px solid #68d391;
+        }
+
+        .status-unauthenticated {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 2px solid #fc8181;
+        }
+
+        .log {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-line {
+            margin: 4px 0;
+        }
+
+        .warning {
+            background: #feebc8;
+            border: 2px solid #ed8936;
+            color: #7c2d12;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 认证状态诊断工具</h1>
+            <p>Mental Health Companion 认证调试</p>
+        </div>
+
+        <div class="content">
+            <!-- Current Auth Status -->
+            <div class="section">
+                <h2>当前认证状态</h2>
+                <div id="authStatus"></div>
+            </div>
+
+            <!-- LocalStorage Contents -->
+            <div class="section">
+                <h2>LocalStorage 内容</h2>
+                <div id="localStorageContent"></div>
+            </div>
+
+            <!-- SessionStorage Contents -->
+            <div class="section">
+                <h2>SessionStorage 内容</h2>
+                <div id="sessionStorageContent"></div>
+            </div>
+
+            <!-- Diagnosis -->
+            <div class="section">
+                <h2>诊断信息</h2>
+                <div id="diagnosis"></div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <button class="button" onclick="refreshData()">🔄 刷新数据</button>
+                <button class="button button-danger" onclick="clearAllAuth()">🧹 清除所有认证数据</button>
+                <button class="button button-success" onclick="goToLogin()">➡️ 跳转到登录页</button>
+            </div>
+
+            <!-- Operation Log -->
+            <div class="section">
+                <h2>操作日志</h2>
+                <div class="log" id="operationLog"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const log = [];
+
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.push(`[${timestamp}] ${message}`);
+            updateLogDisplay();
+        }
+
+        function updateLogDisplay() {
+            const logEl = document.getElementById('operationLog');
+            logEl.innerHTML = log.slice(-20).map(line =>
+                `<div class="log-line">${line}</div>`
+            ).join('');
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function checkAuthStatus() {
+            const authToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+            const authUser = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
+            const oldAuth = localStorage.getItem('auth');
+
+            const isAuthenticated = !!(authToken || oldAuth);
+
+            const statusEl = document.getElementById('authStatus');
+            if (isAuthenticated) {
+                statusEl.innerHTML = `
+                    <div class="status status-authenticated">
+                        ✅ 检测到认证信息：用户处于登录状态
+                    </div>
+                    <div class="warning">
+                        ⚠️ <strong>这就是问题所在！</strong><br>
+                        浏览器中存在旧的登录 token，导致应用认为你已登录。<br>
+                        点击下方"清除所有认证数据"按钮来解决这个问题。
+                    </div>
+                `;
+            } else {
+                statusEl.innerHTML = `
+                    <div class="status status-unauthenticated">
+                        ❌ 未检测到认证信息：用户未登录
+                    </div>
+                    <p style="margin-top: 10px; color: #38a169;">
+                        ✓ 状态正常！现在访问应用应该会显示登录页面。
+                    </p>
+                `;
+            }
+
+            addLog(`认证状态检查: ${isAuthenticated ? '已登录' : '未登录'}`);
+        }
+
+        function displayStorage(storage, elementId, storageName) {
+            const el = document.getElementById(elementId);
+            const items = [];
+
+            for (let i = 0; i < storage.length; i++) {
+                const key = storage.key(i);
+                const value = storage.getItem(key);
+                items.push({ key, value });
+            }
+
+            if (items.length === 0) {
+                el.innerHTML = '<div class="empty">空 - 没有存储的数据</div>';
+                addLog(`${storageName} 为空`);
+            } else {
+                el.innerHTML = items.map(item => {
+                    let displayValue = item.value;
+                    try {
+                        const parsed = JSON.parse(item.value);
+                        displayValue = JSON.stringify(parsed, null, 2);
+                    } catch (e) {
+                        // Not JSON, display as is
+                    }
+
+                    return `
+                        <div class="storage-item">
+                            <div class="storage-key">🔑 ${item.key}</div>
+                            <div class="storage-value">${displayValue}</div>
+                        </div>
+                    `;
+                }).join('');
+                addLog(`${storageName} 包含 ${items.length} 项数据`);
+            }
+        }
+
+        function diagnose() {
+            const diagEl = document.getElementById('diagnosis');
+            const issues = [];
+
+            const authToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+            const oldAuth = localStorage.getItem('auth');
+            const moodEntries = localStorage.getItem('mood_entries');
+
+            if (authToken) {
+                issues.push('⚠️ 发现 <code>auth_token</code> 键 - 这会导致自动登录');
+            }
+
+            if (oldAuth) {
+                issues.push('⚠️ 发现旧版 <code>auth</code> 键 - 应该被清除');
+            }
+
+            if (moodEntries) {
+                issues.push('ℹ️ 发现 <code>mood_entries</code> 键 - Mock 数据（无害）');
+            }
+
+            if (issues.length === 0) {
+                diagEl.innerHTML = '<div style="color: #38a169; font-weight: 600;">✅ 没有发现认证相关的问题</div>';
+            } else {
+                diagEl.innerHTML = `
+                    <div style="margin-bottom: 10px; font-weight: 600; color: #e53e3e;">
+                        发现 ${issues.length} 个问题：
+                    </div>
+                    ${issues.map(issue => `<div style="margin: 8px 0;">${issue}</div>`).join('')}
+                `;
+            }
+        }
+
+        function refreshData() {
+            addLog('刷新数据...');
+            checkAuthStatus();
+            displayStorage(localStorage, 'localStorageContent', 'LocalStorage');
+            displayStorage(sessionStorage, 'sessionStorageContent', 'SessionStorage');
+            diagnose();
+            addLog('刷新完成');
+        }
+
+        function clearAllAuth() {
+            if (!confirm('确定要清除所有认证数据吗？这将退出登录。')) {
+                return;
+            }
+
+            addLog('开始清除认证数据...');
+
+            // Clear auth-related items
+            const authKeys = ['auth_token', 'auth_user', 'auth'];
+            let clearedCount = 0;
+
+            authKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    addLog(`✓ 清除 localStorage.${key}`);
+                    clearedCount++;
+                }
+                if (sessionStorage.getItem(key)) {
+                    sessionStorage.removeItem(key);
+                    addLog(`✓ 清除 sessionStorage.${key}`);
+                    clearedCount++;
+                }
+            });
+
+            addLog(`✅ 清除完成！共清除 ${clearedCount} 项认证数据`);
+
+            // Refresh display
+            setTimeout(() => {
+                refreshData();
+                alert('认证数据已清除！\n\n现在访问应用应该会看到登录页面。\n\n点击"跳转到登录页"按钮进行测试。');
+            }, 100);
+        }
+
+        function goToLogin() {
+            addLog('跳转到登录页面...');
+            window.location.href = 'http://localhost:5173/login';
+        }
+
+        // Initialize
+        addLog('诊断工具已加载');
+        refreshData();
+    </script>
+</body>
+</html>

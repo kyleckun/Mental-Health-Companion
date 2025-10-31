@@ -20,10 +20,9 @@ const MoodEntryForm: React.FC<MoodEntryFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       await onSubmit({ moodScore, note });
-      // Reset form
       setMoodScore(5);
       setNote('');
     } catch (error) {
@@ -34,14 +33,13 @@ const MoodEntryForm: React.FC<MoodEntryFormProps> = ({
   };
 
   const getMoodEmoji = (score: number): string => {
-    if (score <= 2) return '😢';
-    if (score <= 4) return '😟';
-    if (score <= 6) return '😐';
-    if (score <= 8) return '🙂';
-    return '😊';
+    if (score <= 2) return 'Very Low';
+    if (score <= 4) return 'Low';
+    if (score <= 6) return 'Neutral';
+    if (score <= 8) return 'Good';
+    return 'Great';
   };
 
-  // Styles
   const formStyle: React.CSSProperties = {
     maxWidth: '500px',
     margin: '0 auto',
@@ -222,7 +220,6 @@ const MoodEntryForm: React.FC<MoodEntryFormProps> = ({
         </button>
       </div>
 
-      {/* 添加全局样式来处理slider thumb */}
       <style>{`
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;

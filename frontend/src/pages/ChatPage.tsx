@@ -33,7 +33,7 @@ const ChatPage: React.FC = () => {
       setMessages((prev) => [...prev, botMessage, decisionMessage]);
     } catch (error) {
       console.error("Error contacting backend:", error);
-      const errorMsg = { role: "assistant", content: "⚠️ Unable to reach server." };
+      const errorMsg = { role: "assistant", content: "Unable to reach server." };
       setMessages((prev) => [...prev, errorMsg]);
     }
   };
@@ -53,7 +53,7 @@ const ChatPage: React.FC = () => {
       >
         {messages.map((msg, index) => (
           <div key={index} style={{ marginBottom: "6px" }}>
-            <strong>{msg.role === "user" ? "🧑 You: " : "🤖 Bot: "}</strong>
+            <strong>{msg.role === "user" ? "You: " : "Bot: "}</strong>
             {msg.content}
           </div>
         ))}

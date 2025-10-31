@@ -5,3 +5,9 @@ openai
 pydantic
 pydantic-settings
 httpx
+SQLAlchemy
+passlib[bcrypt]
+python-jose[jwt]
+alembic
+python-json-logger
+psycopg2-binary

@@ -1,5 +1,8 @@
 // src/components/Chat/AIChatInterface.tsx
 import React, { useState, useRef, useEffect } from 'react';
+import { authService } from '../../services/authService';
+import JournalAnalyzer from './JournalAnalyzer';
+import type { MoodEntry } from '../../types/mood.types';
 
 interface Message {
   id: string;
@@ -7,26 +10,32 @@ interface Message {
   content: string;
   timestamp: Date;
   isCrisis?: boolean;
+  isStreaming?: boolean;
 }
 
 interface AIChatInterfaceProps {
   onCrisisDetected?: () => void;
 }
 
+// Use empty string for relative URLs - Vite proxy will forward to backend
+const API_BASE_URL = '';
+
 const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ onCrisisDetected }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I\'m your Mental Health Companion. How are you feeling today? Feel free to share what\'s on your mind.',
+      content: 'Hi! I\'m your AI Mental Health Companion. How are you feeling today? Feel free to share what\'s on your mind.',
       timestamp: new Date()
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showJournalAnalyzer, setShowJournalAnalyzer] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 自动滚动到底部
+  // Auto scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -35,7 +44,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ onCrisisDetected }) =
     scrollToBottom();
   }, [messages]);
 
-  // 危机关键词检测
+  // Crisis keyword detection
   const detectCrisis = (text: string): boolean => {
     const crisisKeywords = [
       'suicide', 'kill myself', 'end my life', 'want to die',
@@ -45,57 +54,151 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ onCrisisDetected }) =
     return crisisKeywords.some(keyword => lowerText.includes(keyword));
   };
 
-  // 调用AI API（这里用Mock演示，可以替换成真实API）
-  const callAIAPI = async (userMessage: string): Promise<string> => {
-    // Mock AI响应
-    // TODO: 替换成真实的OpenAI API或其他LLM API
-    
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  // Get authentication token using authService
+  const getAuthToken = (): string | null => {
+    return authService.getToken();
+  };
 
-    // 基于关键词的智能回复
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('exam') || lowerMessage.includes('test') || lowerMessage.includes('study')) {
-      return "I understand exams can be stressful. Here are some tips:\n\n" +
-        "1. Take a 5-minute break every hour\n" +
-        "2. Try deep breathing exercises\n" +
-        "3. Break study material into smaller chunks\n" +
-        "4. Get enough sleep (7-8 hours)\n\n" +
-        "Would you like me to guide you through a quick relaxation exercise?";
-    }
-    
-    if (lowerMessage.includes('anxious') || lowerMessage.includes('worried') || lowerMessage.includes('stress')) {
-      return "It's okay to feel anxious. Let's work through this together:\n\n" +
-        "• Acknowledge your feelings - they're valid\n" +
-        "• Practice grounding: Name 5 things you can see around you\n" +
-        "• Take slow, deep breaths\n" +
-        "• Remember: This feeling is temporary\n\n" +
-        "What specifically is making you feel this way?";
-    }
-    
-    if (lowerMessage.includes('sad') || lowerMessage.includes('depressed') || lowerMessage.includes('down')) {
-      return "I'm sorry you're feeling down. Remember, it's okay not to be okay. " +
-        "Would you like to:\n\n" +
-        "• Talk about what's bothering you?\n" +
-        "• Try a mood-boosting activity?\n" +
-        "• Connect with support resources?\n\n" +
-        "I'm here to listen without judgment.";
-    }
-    
-    if (lowerMessage.includes('sleep') || lowerMessage.includes('tired') || lowerMessage.includes('insomnia')) {
-      return "Sleep problems are common with stress. Here's what might help:\n\n" +
-        "• Maintain a regular sleep schedule\n" +
-        "• Avoid screens 1 hour before bed\n" +
-        "• Try progressive muscle relaxation\n" +
-        "• Keep your room cool and dark\n\n" +
-        "How long have you been having trouble sleeping?";
+  // Call AI API with streaming support
+  const callAIAPIStream = async (userMessage: string, allMessages: Message[]): Promise<void> => {
+    // Create abort controller for request cancellation
+    abortControllerRef.current = new AbortController();
+
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Authentication required. Please login again.');
     }
 
-    // 默认支持性回复
-    return "Thank you for sharing that with me. I'm here to support you. " +
-      "Can you tell me more about how you're feeling? " +
-      "Understanding your emotions better will help me provide more personalized support.";
+    const response = await fetch(`${API_BASE_URL}/api/chat/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        messages: allMessages.map(msg => ({ role: msg.role, content: msg.content }))
+      }),
+      signal: abortControllerRef.current.signal
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Clear auth and redirect to login
+        localStorage.removeItem('auth');
+        window.location.href = '/login';
+        throw new Error('Unauthorized - Please login again');
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to get AI response');
+    }
+
+    if (!response.body) {
+      throw new Error('Response body is null');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    // Create placeholder message for streaming
+    const streamingMessageId = (Date.now() + 1).toString();
+    const streamingMessage: Message = {
+      id: streamingMessageId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      isStreaming: true
+    };
+    setMessages(prev => [...prev, streamingMessage]);
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'metadata' && data.decision) {
+                // Handle decision metadata (e.g., crisis detection)
+                if (data.decision.next_action === 'crisis_flow') {
+                  onCrisisDetected?.();
+                }
+              } else if (data.type === 'content') {
+                // Update streaming message content
+                setMessages(prev => prev.map(msg =>
+                  msg.id === streamingMessageId
+                    ? { ...msg, content: msg.content + data.content }
+                    : msg
+                ));
+              } else if (data.type === 'done') {
+                // Mark streaming as complete
+                setMessages(prev => prev.map(msg =>
+                  msg.id === streamingMessageId
+                    ? { ...msg, isStreaming: false }
+                    : msg
+                ));
+              } else if (data.type === 'error') {
+                throw new Error(data.content);
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Handle journal analysis
+  const handleJournalAnalysis = (entries: MoodEntry[], timeRange: string) => {
+    if (entries.length === 0) return;
+
+    // Format entries for AI analysis
+    const entriesText = entries.map(entry =>
+      `Date: ${new Date(entry.timestamp).toLocaleDateString()} ${new Date(entry.timestamp).toLocaleTimeString()}\n` +
+      `Mood Score: ${entry.moodScore}/10\n` +
+      `Note: ${entry.note || 'No note provided'}\n`
+    ).join('\n---\n');
+
+    const analysisPrompt = `I'd like you to analyze my mood journal entries from ${timeRange}. Here are my ${entries.length} entries:\n\n${entriesText}\n\nPlease provide:\n1. Overall emotional patterns and trends\n2. Insights about my mood fluctuations\n3. Potential triggers or positive influences\n4. Personalized suggestions for improving my mental wellbeing`;
+
+    // Add user message with journal data
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: analysisPrompt,
+      timestamp: new Date()
+    };
+
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    setIsLoading(true);
+
+    // Call AI to analyze
+    callAIAPIStream(analysisPrompt, updatedMessages)
+      .catch((error: any) => {
+        console.error('AI Analysis Error:', error);
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'I apologize, but I encountered an error while analyzing your journal. Please try again.',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   const handleSendMessage = async () => {
@@ -108,47 +211,23 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ onCrisisDetected }) =
       timestamp: new Date()
     };
 
-    // 检测危机
-    const isCrisis = detectCrisis(inputValue);
-    if (isCrisis) {
-      userMessage.isCrisis = true;
-    }
-
-    setMessages(prev => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInputValue('');
     setIsLoading(true);
 
-    // 如果检测到危机，显示紧急支持
-    if (isCrisis) {
-      const crisisMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'system',
-        content: '⚠️ CRISIS SUPPORT ACTIVATED\n\n' +
-          'I\'m concerned about your safety. Please contact:\n\n' +
-          '🆘 Emergency: 000 (Australia)\n' +
-          '📞 Lifeline: 13 11 14 (24/7)\n' +
-          '💬 Beyond Blue: 1300 22 4636\n\n' +
-          'You don\'t have to go through this alone. Would you like me to help you connect with immediate support?',
-        timestamp: new Date(),
-        isCrisis: true
-      };
-      setMessages(prev => [...prev, crisisMessage]);
-      setIsLoading(false);
-      onCrisisDetected?.();
-      return;
-    }
-
     try {
-      const aiResponse = await callAIAPI(inputValue);
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: aiResponse,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
+      // Use streaming API for all messages
+      await callAIAPIStream(inputValue, updatedMessages);
+    } catch (error: any) {
       console.error('AI API Error:', error);
+
+      // Don't show error if request was aborted by user
+      if (error.name === 'AbortError') {
+        console.log('Request cancelled by user');
+        return;
+      }
+
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -160,6 +239,24 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ onCrisisDetected }) =
       setIsLoading(false);
     }
   };
+
+  // Cancel ongoing request
+  const handleCancelRequest = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -237,20 +334,20 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ onCrisisDetected }) =
 
   const sendButtonStyle: React.CSSProperties = {
     padding: '12px 24px',
-    background: '#3b82f6',
+    background: isLoading ? '#ef4444' : '#3b82f6',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
     fontWeight: 600,
-    cursor: isLoading ? 'not-allowed' : 'pointer',
-    opacity: isLoading || !inputValue.trim() ? 0.5 : 1,
+    cursor: 'pointer',
+    opacity: !isLoading && !inputValue.trim() ? 0.5 : 1,
     transition: 'all 0.2s',
   };
 
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        <h2 style={{ margin: 0, fontSize: '20px' }}>💬 AI Mental Health Companion</h2>
+        <h2 style={{ margin: 0, fontSize: '20px' }}>AI Mental Health Companion</h2>
         <p style={{ margin: '4px 0 0 0', fontSize: '14px', opacity: 0.9 }}>
           Available 24/7 for support
         </p>
@@ -267,25 +364,39 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ onCrisisDetected }) =
             }}
           >
             <div style={messageStyle(message.role, message.isCrisis)}>
-              {message.content}
+              {message.content || (message.isStreaming ? '...' : '')}
             </div>
             <div style={timestampStyle}>
               {message.timestamp.toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
               })}
+              {message.isStreaming && ' (streaming...)'}
             </div>
           </div>
         ))}
-        {isLoading && (
-          <div style={{ ...messageStyle('assistant'), opacity: 0.6 }}>
-            Thinking...
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
       <div style={inputContainerStyle}>
+        <button
+          onClick={() => setShowJournalAnalyzer(true)}
+          style={{
+            padding: '10px 16px',
+            backgroundColor: '#8b5cf6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginRight: '8px',
+            whiteSpace: 'nowrap',
+          }}
+          disabled={isLoading}
+        >
+          📊 Analyze Journal
+        </button>
         <textarea
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
@@ -296,13 +407,20 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ onCrisisDetected }) =
           disabled={isLoading}
         />
         <button
-          onClick={handleSendMessage}
+          onClick={isLoading ? handleCancelRequest : handleSendMessage}
           style={sendButtonStyle}
-          disabled={isLoading || !inputValue.trim()}
+          disabled={!isLoading && !inputValue.trim()}
         >
-          {isLoading ? 'Sending...' : 'Send'}
+          {isLoading ? 'Cancel' : 'Send'}
         </button>
       </div>
+
+      {/* Journal Analyzer Modal */}
+      <JournalAnalyzer
+        isOpen={showJournalAnalyzer}
+        onClose={() => setShowJournalAnalyzer(false)}
+        onAnalyze={handleJournalAnalysis}
+      />
     </div>
   );
 };

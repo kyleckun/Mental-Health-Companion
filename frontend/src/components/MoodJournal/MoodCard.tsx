@@ -13,11 +13,11 @@ const MoodCard: React.FC<MoodCardProps> = ({ entry, onEdit, onDelete }) => {
   const [isDeleteHovered, setDeleteHovered] = useState(false);
 
   const getMoodEmoji = (score: number): string => {
-    if (score <= 2) return '😢';
-    if (score <= 4) return '😟';
-    if (score <= 6) return '😐';
-    if (score <= 8) return '🙂';
-    return '😊';
+    if (score <= 2) return 'Very Low';
+    if (score <= 4) return 'Low';
+    if (score <= 6) return 'Neutral';
+    if (score <= 8) return 'Good';
+    return 'Great';
   };
 
   const formattedDate = new Date(entry.timestamp).toLocaleString('en-US', {
@@ -113,23 +113,23 @@ const MoodCard: React.FC<MoodCardProps> = ({ entry, onEdit, onDelete }) => {
           </span>
         </div>
         <div style={cardActionsStyle}>
-          <button 
-            onClick={() => onEdit(entry)} 
-            style={btnIconStyle(isEditHovered)} 
+          <button
+            onClick={() => onEdit(entry)}
+            style={btnIconStyle(isEditHovered)}
             aria-label="Edit"
             onMouseEnter={() => setEditHovered(true)}
             onMouseLeave={() => setEditHovered(false)}
           >
-            ✏️
+            Edit
           </button>
-          <button 
-            onClick={() => onDelete(entry.id)} 
-            style={btnIconStyle(isDeleteHovered)} 
+          <button
+            onClick={() => onDelete(entry.id)}
+            style={btnIconStyle(isDeleteHovered)}
             aria-label="Delete"
             onMouseEnter={() => setDeleteHovered(true)}
             onMouseLeave={() => setDeleteHovered(false)}
           >
-            🗑️
+            Delete
           </button>
         </div>
       </div>

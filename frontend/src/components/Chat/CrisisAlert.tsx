@@ -94,7 +94,7 @@ const CrisisAlert: React.FC<CrisisAlertProps> = ({ isOpen, onClose }) => {
       <div style={overlayStyle} onClick={onClose}>
         <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
           <div style={headerStyle}>
-            <span style={{ fontSize: '32px' }}>🆘</span>
+            <span style={{ fontSize: '32px' }}>!</span>
             <h2 style={titleStyle}>Crisis Support</h2>
           </div>
 
@@ -108,7 +108,7 @@ const CrisisAlert: React.FC<CrisisAlertProps> = ({ isOpen, onClose }) => {
 
           <div style={hotlineStyle}>
             <div style={hotlineItemStyle}>
-              <span>📞</span>
+              <span>PHONE</span>
               <div>
                 <div>Emergency Services</div>
                 <div style={{ fontSize: '20px', color: '#dc2626' }}>000</div>
@@ -116,7 +116,7 @@ const CrisisAlert: React.FC<CrisisAlertProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div style={hotlineItemStyle}>
-              <span>💬</span>
+              <span>TEXT</span>
               <div>
                 <div>Lifeline Australia</div>
                 <div style={{ fontSize: '20px', color: '#dc2626' }}>13 11 14</div>
@@ -124,7 +124,7 @@ const CrisisAlert: React.FC<CrisisAlertProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div style={hotlineItemStyle}>
-              <span>🧠</span>
+              <span>SUPPORT</span>
               <div>
                 <div>Beyond Blue</div>
                 <div style={{ fontSize: '20px', color: '#dc2626' }}>1300 22 4636</div>
@@ -132,7 +132,7 @@ const CrisisAlert: React.FC<CrisisAlertProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div style={hotlineItemStyle}>
-              <span>🏥</span>
+              <span>HELP</span>
               <div>
                 <div>Suicide Call Back Service</div>
                 <div style={{ fontSize: '20px', color: '#dc2626' }}>1300 659 467</div>

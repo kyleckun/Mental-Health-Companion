@@ -13,6 +13,7 @@ export interface MoodTrendData {
   date: string;
   moodScore: number;
   avgScore?: number;
+  entryCount?: number;  // Number of entries for this data point
 }
 
 export interface VisualizationFilters {

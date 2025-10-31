@@ -22,7 +22,6 @@ async def analyze_emotion(text: str) -> EmotionResult:
 
     raw = await chat([system_msg, user_msg], temperature=0.0)
 
-    # 处理模型可能输出带文本或格式的情况，只提取 JSON
     try:
         data = json.loads(raw)
     except Exception:

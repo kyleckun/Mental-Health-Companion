@@ -35,14 +35,13 @@ const MoodHistoryList: React.FC<MoodHistoryListProps> = ({
   };
 
   const getMoodEmoji = (score: number): string => {
-    if (score <= 2) return '😢';
-    if (score <= 4) return '😟';
-    if (score <= 6) return '😐';
-    if (score <= 8) return '🙂';
-    return '😊';
+    if (score <= 2) return 'Very Low';
+    if (score <= 4) return 'Low';
+    if (score <= 6) return 'Neutral';
+    if (score <= 8) return 'Good';
+    return 'Great';
   };
 
-  // Styles
   const emptyStateStyle: React.CSSProperties = {
     textAlign: 'center',
     padding: '48px 24px',
@@ -162,7 +161,7 @@ const MoodHistoryList: React.FC<MoodHistoryListProps> = ({
   if (entries.length === 0) {
     return (
       <div style={emptyStateStyle}>
-        <div style={emptyIconStyle}>📝</div>
+        <div style={emptyIconStyle}>NOTE</div>
         <h3 style={emptyH3Style}>No mood entries yet</h3>
         <p style={emptyPStyle}>Start tracking your mood to see your history here</p>
       </div>
@@ -199,17 +198,17 @@ const MoodHistoryList: React.FC<MoodHistoryListProps> = ({
             {(onEdit || onDelete) && (
               <div style={cardActionsStyle}>
                 {onEdit && (
-                  <button 
+                  <button
                     onClick={() => onEdit(entry)}
                     style={editBtnStyle}
                     className="edit-btn"
                     aria-label="Edit entry"
                   >
-                    ✏️ Edit
+                    Edit
                   </button>
                 )}
                 {onDelete && (
-                  <button 
+                  <button
                     onClick={() => {
                       if (window.confirm('Are you sure you want to delete this entry?')) {
                         onDelete(entry.id);
@@ -219,7 +218,7 @@ const MoodHistoryList: React.FC<MoodHistoryListProps> = ({
                     className="delete-btn"
                     aria-label="Delete entry"
                   >
-                    🗑️ Delete
+                    Delete
                   </button>
                 )}
               </div>
@@ -228,7 +227,6 @@ const MoodHistoryList: React.FC<MoodHistoryListProps> = ({
         ))}
       </div>
 
-      {/* 处理hover效果和响应式 */}
       <style>{`
         .mood-card:hover {
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
