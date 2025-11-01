@@ -1,3 +1,43 @@
-node_modules
+# Node
+node_modules/
 .DS_Store
 db/.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+backend/venv/
+backend/env/
+venv/
+env/
+
+# Database
+backend/test.db
+backend/*.db
+*.db
+
+# Environment
+backend/.env
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

@@ -713,5 +713,10 @@ Planned features for future releases:
 **Disclaimer**: This application is designed to support mental wellness but is not a replacement for professional mental health care. If you're experiencing a mental health crisis, please contact emergency services or a mental health professional immediately.
 
 **Crisis Resources**:
+- **Australia**:
+  - Lifeline: 13 11 14 (24/7 crisis support)
+  - Beyond Blue: 1300 22 4636 (24/7)
+  - Kids Helpline: 1800 55 1800 (ages 5-25)
 - **US**: National Suicide Prevention Lifeline: 1-800-273-8255
+- **UK**: Samaritans: 116 123
 - **International**: https://www.befrienders.org/
