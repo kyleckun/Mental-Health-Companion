@@ -29,41 +29,42 @@ A comprehensive mental health support application that combines mood tracking, A
 ### Core Features
 
 - **User Authentication & Profiles**
-  - Secure JWT-based authentication
-  - User type selection (Student, Young Professional, Pregnant Woman, General)
-  - Profile management and customization
+- Secure JWT-based authentication
+- User type selection (Student, Young Professional, Pregnant Woman, General)
+- Profile management and customization
+- Emergency contacts management (add, view, delete personal emergency contacts)
 
 - **Mood Journal**
-  - Track daily mood levels (1-10 scale)
-  - Add contextual notes and activities
-  - View mood history with timestamps
-  - Edit and delete mood entries
+- Track daily mood levels (1-10 scale)
+- Add contextual notes and activities
+- View mood history with timestamps
+- Edit and delete mood entries
 
 - **AI-Powered Chat Therapy**
-  - Real-time conversation with GPT-4 powered assistant
-  - Context-aware responses based on user type
-  - Personalized mental health support
-  - Crisis detection and intervention
-  - Streaming responses for better UX
+- Real-time conversation with GPT-4 powered assistant
+- Context-aware responses based on user type
+- Personalized mental health support
+- Crisis detection and intervention
+- Streaming responses for better UX
 
 - **Personalized Suggestions**
-  - Template-based wellness recommendations
-  - AI-generated personalized suggestions
-  - Filtered by user type and mood trends
-  - Time range selection (Today/Week/Month/Custom)
-  - Track completion status
+- Template-based wellness recommendations
+- AI-generated personalized suggestions
+- Filtered by user type and mood trends
+- Time range selection (Today/Week/Month/Custom)
+- Track completion status
 
 - **Data Visualization**
-  - Interactive mood trend charts
-  - Time-based filtering (Today/Week/Month/Custom)
-  - Mood pattern analysis
-  - Visual insights into mental health trends
+- Interactive mood trend charts
+- Time-based filtering (Today/Week/Month/Custom)
+- Mood pattern analysis
+- Visual insights into mental health trends
 
 - **Multi-User Type Support**
-  - **Students**: Academic stress management, study breaks, campus resources
-  - **Young Professionals**: Work-life balance, career stress, productivity tips
-  - **Pregnant Women**: Prenatal wellness, gentle activities, maternal health
-  - **General Users**: Comprehensive mental health support
+- **Students**: Academic stress management, study breaks, campus resources
+- **Young Professionals**: Work-life balance, career stress, productivity tips
+- **Pregnant Women**: Prenatal wellness, gentle activities, maternal health
+- **General Users**: Comprehensive mental health support
 
 ## Tech Stack
 
@@ -94,60 +95,60 @@ A comprehensive mental health support application that combines mood tracking, A
 
 ```
 Mental-Health-Companion/
-├── backend/
-│   ├── models/              # SQLAlchemy models
-│   │   ├── user.py         # User model with user_type
-│   │   ├── mood.py         # Mood entry model
-│   │   ├── message.py      # Chat message model
-│   │   └── refresh_token.py
-│   ├── routers/            # FastAPI route handlers
-│   │   ├── auth.py         # Authentication endpoints
-│   │   ├── mood.py         # Mood journal endpoints
-│   │   ├── chat.py         # AI chat endpoints
-│   │   ├── suggestions.py  # Personalized suggestions
-│   │   └── emotion.py      # Emotion analysis
-│   ├── services/           # Business logic
-│   │   ├── auth_service.py
-│   │   ├── emotion_service.py
-│   │   └── openai_client.py
-│   ├── schemas/            # Pydantic schemas
-│   │   └── auth.py
-│   ├── migrations/         # Alembic migrations
-│   │   └── versions/
-│   ├── main.py             # FastAPI app entry point
-│   ├── config.py           # Configuration management
-│   ├── database.py         # Database setup
-│   ├── dependencies.py     # FastAPI dependencies
-│   ├── logger.py           # Logging configuration
-│   ├── requirements.txt    # Python dependencies
-│   └── .env.example        # Environment template
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   │   ├── Chat/       # AI chat interface
-│   │   │   ├── MoodJournal/ # Mood tracking components
-│   │   │   └── Visualization/ # Charts
-│   │   ├── pages/          # Page components
-│   │   │   ├── LoginPage.tsx
-│   │   │   ├── RegisterPage.tsx
-│   │   │   ├── MoodJournalPage.tsx  # Main app (4 tabs)
-│   │   │   ├── ChatPage.tsx
-│   │   │   └── ProfilePage.tsx
-│   │   ├── services/       # API clients
-│   │   │   ├── apiClient.ts
-│   │   │   ├── authService.ts
-│   │   │   ├── moodService.ts
-│   │   │   └── suggestionsService.ts
-│   │   ├── types/          # TypeScript types
-│   │   ├── App.tsx         # Main app component
-│   │   └── main.tsx        # Entry point
-│   ├── package.json
-│   └── vite.config.ts
-│
-├── README.md               # This file
-├── REDUNDANT_FILES.md      # Cleanup documentation
-└── cleanup_redundant_files.py  # Cleanup script
+backend/
+models/ # SQLAlchemy models
+user.py # User model with user_type
+mood.py # Mood entry model
+message.py # Chat message model
+refresh_token.py
+routers/ # FastAPI route handlers
+auth.py # Authentication endpoints
+mood.py # Mood journal endpoints
+chat.py # AI chat endpoints
+suggestions.py # Personalized suggestions
+emotion.py # Emotion analysis
+services/ # Business logic
+auth_service.py
+emotion_service.py
+openai_client.py
+schemas/ # Pydantic schemas
+auth.py
+migrations/ # Alembic migrations
+versions/
+main.py # FastAPI app entry point
+config.py # Configuration management
+database.py # Database setup
+dependencies.py # FastAPI dependencies
+logger.py # Logging configuration
+requirements.txt # Python dependencies
+.env.example # Environment template
+
+frontend/
+src/
+components/ # React components
+Chat/ # AI chat interface
+MoodJournal/ # Mood tracking components
+Visualization/ # Charts
+pages/ # Page components
+LoginPage.tsx
+RegisterPage.tsx
+MoodJournalPage.tsx # Main app (4 tabs)
+ChatPage.tsx
+ProfilePage.tsx
+services/ # API clients
+apiClient.ts
+authService.ts
+moodService.ts
+suggestionsService.ts
+types/ # TypeScript types
+App.tsx # Main app component
+main.tsx # Entry point
+package.json
+vite.config.ts
+
+README.md # This file
+REDUNDANT_FILES.md # Cleanup documentation
+cleanup_redundant_files.py # Cleanup script
 ```
 
 ## Prerequisites
@@ -206,47 +207,47 @@ npm install
 ### Backend Configuration
 
 1. **Create environment file**:
-   ```bash
-   cd backend
-   cp .env.example .env
-   ```
+```bash
+cd backend
+cp .env.example .env
+```
 
 2. **Edit `.env` file** with your settings:
 
-   ```bash
-   # Generate a secret key
-   python -c "import secrets; print(secrets.token_urlsafe(32))"
-   ```
+```bash
+# Generate a secret key
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
 
-   Then update `.env`:
-   ```env
-   # Security
-   SECRET_KEY=your_generated_secret_key_here
+Then update `.env`:
+```env
+# Security
+SECRET_KEY=your_generated_secret_key_here
 
-   # OpenAI API
-   OPENAI_API_KEY=your_openai_api_key_here
+# OpenAI API
+OPENAI_API_KEY=your_openai_api_key_here
 
-   # Database (SQLite for development)
-   DATABASE_URL=sqlite:///./test.db
+# Database (SQLite for development)
+DATABASE_URL=sqlite:///./test.db
 
-   # CORS (update if frontend runs on different port)
-   CORS_ORIGINS=["http://localhost:5173"]
-   ```
+# CORS (update if frontend runs on different port)
+CORS_ORIGINS=["http://localhost:5173"]
+```
 
 3. **Initialize the database**:
-   ```bash
-   # Run Alembic migrations
-   alembic upgrade head
-   ```
+```bash
+# Run Alembic migrations
+alembic upgrade head
+```
 
 ### Frontend Configuration
 
 The frontend is pre-configured to connect to `http://localhost:8000`. If you need to change this:
 
 1. Edit `frontend/src/services/apiClient.ts`:
-   ```typescript
-   const API_BASE_URL = 'http://localhost:8000'; // Change if needed
-   ```
+```typescript
+const API_BASE_URL = 'http://localhost:8000'; // Change if needed
+```
 
 ## Running the Application
 
@@ -307,14 +308,14 @@ npm run dev
 1. Navigate to http://localhost:5173
 2. Click "Register" or "Sign Up"
 3. Fill in:
-   - Username (unique)
-   - Email address
-   - Password (minimum requirements apply)
-   - Select your **User Type**:
-     - Student
-     - Young Professional
-     - Pregnant Woman
-     - General User
+- Username (unique)
+- Email address
+- Password (minimum requirements apply)
+- Select your **User Type**:
+- Student
+- Young Professional
+- Pregnant Woman
+- General User
 4. Click "Register"
 
 ### 2. Login
@@ -343,10 +344,10 @@ After logging in, you'll see the main dashboard with 4 tabs:
 #### Trends Tab
 - View interactive mood charts
 - Select time range:
-  - Today: Current day only
-  - Week: Past 7 days
-  - Month: Past 30 days
-  - Custom: Select specific date range
+- Today: Current day only
+- Week: Past 7 days
+- Month: Past 30 days
+- Custom: Select specific date range
 - Analyze mood patterns over time
 
 #### Suggestions Tab
@@ -360,10 +361,14 @@ After logging in, you'll see the main dashboard with 4 tabs:
 
 1. Click "Profile" button in the header
 2. Update your:
-   - Email address
-   - User type
-3. Click "Save Changes"
-4. Use "Logout" to end your session
+- Email address
+- User type
+3. Manage Emergency Contacts:
+- Add emergency contacts (name, phone, relationship)
+- View your saved contacts
+- Delete contacts when needed
+4. Click "Save Changes" to update profile
+5. Use "Logout" to end your session
 
 ## API Documentation
 
@@ -431,26 +436,26 @@ The default configuration uses SQLite, which creates a `test.db` file in the `ba
 For production deployment, use PostgreSQL:
 
 1. **Install PostgreSQL**:
-   - Windows: https://www.postgresql.org/download/windows/
-   - macOS: `brew install postgresql`
-   - Linux: `sudo apt-get install postgresql`
+- Windows: https://www.postgresql.org/download/windows/
+- macOS: `brew install postgresql`
+- Linux: `sudo apt-get install postgresql`
 
 2. **Create database**:
-   ```sql
-   CREATE DATABASE mental_health_db;
-   CREATE USER mh_user WITH PASSWORD 'secure_password';
-   GRANT ALL PRIVILEGES ON DATABASE mental_health_db TO mh_user;
-   ```
+```sql
+CREATE DATABASE mental_health_db;
+CREATE USER mh_user WITH PASSWORD 'secure_password';
+GRANT ALL PRIVILEGES ON DATABASE mental_health_db TO mh_user;
+```
 
 3. **Update `.env`**:
-   ```env
-   DATABASE_URL=postgresql://mh_user:secure_password@localhost:5432/mental_health_db
-   ```
+```env
+DATABASE_URL=postgresql://mh_user:secure_password@localhost:5432/mental_health_db
+```
 
 4. **Run migrations**:
-   ```bash
-   alembic upgrade head
-   ```
+```bash
+alembic upgrade head
+```
 
 ### Database Migrations
 
@@ -470,7 +475,7 @@ alembic upgrade head
 
 Rollback a migration:
 ```bash
-alembic downgrade -1  # Go back one version
+alembic downgrade -1 # Go back one version
 ```
 
 ## Deployment
@@ -478,46 +483,46 @@ alembic downgrade -1  # Go back one version
 ### Backend Deployment (Production)
 
 1. **Set production environment variables**:
-   ```env
-   APP_ENV=production
-   DEBUG=false
-   DATABASE_URL=postgresql://user:pass@host:5432/dbname
-   ```
+```env
+APP_ENV=production
+DEBUG=false
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+```
 
 2. **Use production ASGI server** (Gunicorn + Uvicorn workers):
-   ```bash
-   pip install gunicorn
-   gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
-   ```
+```bash
+pip install gunicorn
+gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
 
 3. **Set up reverse proxy** (Nginx example):
-   ```nginx
-   server {
-       listen 80;
-       server_name api.yourdomain.com;
+```nginx
+server {
+listen 80;
+server_name api.yourdomain.com;
 
-       location / {
-           proxy_pass http://127.0.0.1:8000;
-           proxy_set_header Host $host;
-           proxy_set_header X-Real-IP $remote_addr;
-       }
-   }
-   ```
+location / {
+proxy_pass http://127.0.0.1:8000;
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+}
+}
+```
 
 ### Frontend Deployment
 
 1. **Build for production**:
-   ```bash
-   cd frontend
-   npm run build
-   ```
+```bash
+cd frontend
+npm run build
+```
 
 2. **Serve static files**:
-   - The `dist/` folder contains the production build
-   - Deploy to: Vercel, Netlify, AWS S3 + CloudFront, etc.
+- The `dist/` folder contains the production build
+- Deploy to: Vercel, Netlify, AWS S3 + CloudFront, etc.
 
 3. **Update API URL**:
-   - Before building, update `apiClient.ts` with production API URL
+- Before building, update `apiClient.ts` with production API URL
 
 ### Docker Deployment (Optional)
 
@@ -537,26 +542,26 @@ Create `docker-compose.yml`:
 ```yaml
 version: '3.8'
 services:
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    env_file:
-      - ./backend/.env
-    depends_on:
-      - db
+backend:
+build: ./backend
+ports:
+- "8000:8000"
+env_file:
+- ./backend/.env
+depends_on:
+- db
 
-  db:
-    image: postgres:14
-    environment:
-      POSTGRES_DB: mental_health_db
-      POSTGRES_USER: mh_user
-      POSTGRES_PASSWORD: secure_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+db:
+image: postgres:14
+environment:
+POSTGRES_DB: mental_health_db
+POSTGRES_USER: mh_user
+POSTGRES_PASSWORD: secure_password
+volumes:
+- postgres_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+postgres_data:
 ```
 
 Run with:
@@ -654,9 +659,9 @@ If you encounter issues:
 3. Consult API docs: http://localhost:8000/docs
 4. Check existing GitHub issues
 5. Create a new issue with:
-   - Error message
-   - Steps to reproduce
-   - Environment details (OS, Python version, Node version)
+- Error message
+- Steps to reproduce
+- Environment details (OS, Python version, Node version)
 
 ## Contributing
 
@@ -714,9 +719,9 @@ Planned features for future releases:
 
 **Crisis Resources**:
 - **Australia**:
-  - Lifeline: 13 11 14 (24/7 crisis support)
-  - Beyond Blue: 1300 22 4636 (24/7)
-  - Kids Helpline: 1800 55 1800 (ages 5-25)
+- Lifeline: 13 11 14 (24/7 crisis support)
+- Beyond Blue: 1300 22 4636 (24/7)
+- Kids Helpline: 1800 55 1800 (ages 5-25)
 - **US**: National Suicide Prevention Lifeline: 1-800-273-8255
 - **UK**: Samaritans: 116 123
 - **International**: https://www.befrienders.org/

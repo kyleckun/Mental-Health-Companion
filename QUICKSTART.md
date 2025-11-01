@@ -97,10 +97,10 @@ Open http://localhost:5173 in your browser!
 1. **Register** a new account
 2. Select your **user type** (Student, Young Professional, etc.)
 3. Explore the 4 tabs:
-   - **AI Chat** - Talk to AI therapist
-   - **Journal** - Log your mood
-   - **Trends** - View mood charts
-   - **Suggestions** - Get personalized tips
+- **AI Chat** - Talk to AI therapist
+- **Journal** - Log your mood
+- **Trends** - View mood charts
+- **Suggestions** - Get personalized tips
 
 ## How to Use
 
@@ -108,10 +108,10 @@ Open http://localhost:5173 in your browser!
 1. Open http://localhost:5173
 2. Click "Register" to create a new account
 3. Fill in your information and select your **user type**:
-   - **Student** - Academic stress, study tips, campus resources
-   - **Young Professional** - Work-life balance, career stress management
-   - **Pregnant Woman** - Prenatal wellness, gentle activities
-   - **General** - Comprehensive mental health support
+- **Student** - Academic stress, study tips, campus resources
+- **Young Professional** - Work-life balance, career stress management
+- **Pregnant Woman** - Prenatal wellness, gentle activities
+- **General** - Comprehensive mental health support
 
 ### Main Features
 
@@ -143,6 +143,7 @@ After logging in, you'll see 4 tabs:
 ### Profile Management
 - Click "Profile" button at the top
 - Update your email and user type
+- Add/manage emergency contacts (name, phone, relationship)
 - Click "Logout" to end your session
 
 ## Troubleshooting
@@ -169,8 +170,8 @@ alembic upgrade head
 ### Issue: Frontend error - "Failed to resolve import"
 ```bash
 cd frontend
-rm -rf node_modules package-lock.json  # Remove old dependencies
-npm install  # Reinstall
+rm -rf node_modules package-lock.json # Remove old dependencies
+npm install # Reinstall
 ```
 
 ### Issue: CORS error
@@ -198,9 +199,9 @@ This application is a mental health **support tool** and is not a replacement fo
 
 **If you're experiencing a mental health crisis, please contact**:
 - **Australia**:
-  - Lifeline: 13 11 14 (24/7 crisis support)
-  - Beyond Blue: 1300 22 4636 (24/7)
-  - Kids Helpline: 1800 55 1800 (ages 5-25)
+- Lifeline: 13 11 14 (24/7 crisis support)
+- Beyond Blue: 1300 22 4636 (24/7)
+- Kids Helpline: 1800 55 1800 (ages 5-25)
 - **US**: National Suicide Prevention Lifeline: 1-800-273-8255
 - **UK**: Samaritans: 116 123
 - **International**: https://www.befrienders.org/
