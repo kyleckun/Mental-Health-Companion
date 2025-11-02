@@ -1,9 +1,9 @@
 # Agile Development Experience
 
 **Project**: Mental Health Companion
-**Team Size**: 3 members
-**Development Period**: Week 8 - Week 13 (6 weeks)
-**Methodology**: Agile Scrum with 2-week sprints
+**Team Size**: 4 members
+**Development Period**: Week 10 - Week 12 (3 weeks)
+**Methodology**: Agile Scrum with 1-week sprints
 
 ---
 
@@ -28,7 +28,8 @@
 |--------|-------------------------|--------------|
 | Member 1 | Backend Development, Database Design | FastAPI, SQLAlchemy, Alembic, PostgreSQL |
 | Member 2 | Frontend Development, UI/UX Design | React, TypeScript, Recharts, Vite |
-| Member 3 | AI Integration, DevOps, Deployment | OpenAI API, Docker, CI/CD |
+| Member 3 | AI Integration, DevOps, CI/CD | OpenAI API, GitHub Actions, Testing |
+| Member 4 | Project Management, JIRA, Documentation | JIRA, User Stories, Sprint Planning |
 
 ### Collaborative Responsibilities
 - Code reviews (all members)
@@ -42,7 +43,7 @@
 
 ### Agile Practices Implemented
 
-1. **Sprint Planning**: 2-week sprints with defined goals and user stories
+1. **Sprint Planning**: 1-week sprints with defined goals and user stories
 2. **Daily Standups**: Brief check-ins via messaging (Discord/WeChat)
 3. **Sprint Reviews**: Demo completed features at end of each sprint
 4. **Sprint Retrospectives**: Discuss what went well and what to improve
@@ -53,7 +54,7 @@
 
 - **Version Control**: Git + GitHub
 - **Communication**: Discord / WeChat
-- **Project Management**: GitHub Projects / Issues
+- **Project Management**: JIRA (managed by Member 4)
 - **Code Review**: GitHub Pull Requests
 - **CI/CD**: GitHub Actions
 - **Development**: VS Code, PyCharm
@@ -62,7 +63,7 @@
 
 ## Sprint Breakdown
 
-### Sprint 1 (Week 8-9): Foundation & Core Features
+### Sprint 1 (Week 10): Foundation & Core Features
 
 **Sprint Goal**: Establish project foundation and implement core mood tracking features
 
@@ -119,7 +120,7 @@
 
 ---
 
-### Sprint 2 (Week 10-11): AI Integration & User Authentication
+### Sprint 2 (Week 11): AI Integration & User Authentication
 
 **Sprint Goal**: Integrate AI capabilities and implement secure user authentication
 
@@ -175,7 +176,7 @@
 
 #### Feedback & Iterations
 
-**Initial Feedback** (Week 10):
+**Initial Feedback** (Week 11):
 > "AI responses feel too generic and don't consider user context"
 
 **Action Taken**:
@@ -189,7 +190,7 @@
 - Pregnant Women receive prenatal wellness tips
 - Crisis detection became more accurate with context
 
-**Code Quality Feedback** (Week 10):
+**Code Quality Feedback** (Week 11):
 > "Too many Chinese comments and UI strings, need internationalization"
 
 **Action Taken**:
@@ -217,7 +218,7 @@
 
 ---
 
-### Sprint 3 (Week 12-13): Feature Enhancement & Polish
+### Sprint 3 (Week 12): Feature Enhancement & Polish
 
 **Sprint Goal**: Add personalized suggestions, improve UX, and complete documentation
 
@@ -319,18 +320,6 @@
 - Users can now update their profile settings
 - Emergency contacts stored securely per user
 - Better data organization and user autonomy
-
-**Documentation Feedback** (Week 13):
-> "Setup instructions are unclear for new developers"
-
-**Action Taken**:
-- Created QUICKSTART.md with step-by-step guide
-- Added troubleshooting section with common errors
-- Included example .env configuration
-
-**Result**:
-- New team members can set up project in 5 minutes
-- Reduced setup-related questions by 80%
 
 #### Sprint 3 Retrospective
 
@@ -604,21 +593,21 @@ hotfix/cors-configuration
 
 ### Commit History Highlights
 
-**Sprint 1 Commits** (Week 8-9):
+**Sprint 1 Commits** (Week 10):
 ```
 22426c4 Initial commit: Mental Health Companion - Stage 2 frontend implementation
 84d8f4d feat: Backend integration
 b46ccd6 feat: Add mood journal CRUD operations
 ```
 
-**Sprint 2 Commits** (Week 10-11):
+**Sprint 2 Commits** (Week 11):
 ```
 a97f0d0 feat: Major frontend update with authentication system
 4a367e4 feat: Backend integration with OpenAI API
 8cc797a feat: Add AI chat with crisis detection
 ```
 
-**Sprint 3 Commits** (Week 12-13):
+**Sprint 3 Commits** (Week 12):
 ```
 9cdc684 feat: Add time range selection for suggestions and improve documentation
 034e80c feat: Add Emergency Contacts CRUD feature and new migration file
@@ -629,8 +618,8 @@ bc0777a chore: Update .gitignore and remove unnecessary files
 
 ### Git Statistics
 
-- **Total Commits**: 10+ commits across 6 weeks
-- **Contributors**: 3 team members
+- **Total Commits**: 10+ commits across 3 weeks
+- **Contributors**: 4 team members
 - **Branches**: 8+ feature branches
 - **Files Changed**: 100+ files
 - **Lines of Code**: ~15,000 lines (frontend + backend)
